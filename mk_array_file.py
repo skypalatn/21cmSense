@@ -29,7 +29,7 @@ def beamgridder(xcen,ycen,size):
     if round(ycen) > size - 1 or round(xcen) > size - 1 or ycen < 0. or xcen <0.: 
         return beam
     else:
-        beam[round(ycen),round(xcen)] = 1. #single pixel gridder
+        beam[int(round(ycen)),int(round(xcen))] = 1. #single pixel gridder
         return beam
 
 #==============================READ ARRAY PARAMETERS=========================
@@ -43,7 +43,7 @@ if opts.track:
     name = prms['name']+'track_%.1fhr' % opts.track
 else:
     obs_duration = prms['obs_duration']*(0.15/opts.freq) #scales observing time linearly with frequency to account for change in beam FWHM
-    name = prms['name']+'drift'; print name
+    name = prms['name']+'drift'; print(name)
 dish_size_in_lambda = prms['dish_size_in_lambda']
 
 #==========================FIDUCIAL OBSERVATION PARAMETERS===================
@@ -56,7 +56,7 @@ cen_jd = 2454600.90911
 start_jd = cen_jd - (1./24)*((obs_duration/t_int)/2)
 end_jd = cen_jd + (1./24)*(((obs_duration-1)/t_int)/2)
 times = n.arange(start_jd,end_jd,(1./24/t_int))
-print 'Observation duration:', start_jd, end_jd
+print( 'Observation duration:', start_jd, end_jd)
 
 ref_fq = .150
 
@@ -75,7 +75,7 @@ obs_zen.compute(aa) #observation is phased to zenith of the center time of the d
 bl_len_min = opts.bl_min / (a.const.c/(ref_fq*1e11)) #converts meters to lambda
 bl_len_max = 0.
 for i in xrange(nants):
-    print 'working on antenna %i of %i' % (i, len(aa))
+    print( 'working on antenna %i of %i' % (i, len(aa)))
     for j in xrange(nants):
         if i == j: continue #no autocorrelations
         u,v,w = aa.gen_uvw(i,j,src=obs_zen)
@@ -86,18 +86,20 @@ for i in xrange(nants):
         cnt +=1
         if not uvbins.has_key(uvbin): uvbins[uvbin] = ['%i,%i' % (i,j)]
         else: uvbins[uvbin].append('%i,%i' % (i,j))
-print 'There are %i baseline types' % len(uvbins.keys())
+print( 'There are %i baseline types' % len(uvbins.keys()))
 
-print 'The longest baseline is %.2f meters' % (bl_len_max*(a.const.c/(ref_fq*1e11))) #1e11 converts from GHz to cm
+print( 'The longest baseline is %.2f meters' % (bl_len_max*(a.const.c/(ref_fq*1e11)))) #1e11 converts from GHz to cm
 if opts.bl_max: 
     bl_len_max = opts.bl_max / (a.const.c/(ref_fq*1e11)) #units of wavelength
-    print 'The longest baseline being included is %.2f m' % (bl_len_max*(a.const.c/(ref_fq*1e11)))
+    print( 'The longest baseline being included is %.2f m' % (bl_len_max*(a.const.c/(ref_fq*1e11))))
 
 #grid each baseline type into uv plane
-dim = n.round(bl_len_max/dish_size_in_lambda)*2 + 1 # round to nearest odd
-uvsum,quadsum = n.zeros((dim,dim)), n.zeros((dim,dim)) #quadsum adds all non-instantaneously-redundant baselines incoherently
+dim = int(n.round(bl_len_max/dish_size_in_lambda)*2 + 1 )# round to nearest odd
+print(dim)
+uvsum = n.zeros((dim,dim))
+quadsum = n.zeros((dim,dim)) #quadsum adds all non-instantaneously-redundant baselines incoherently
 for cnt, uvbin in enumerate(uvbins):
-    print 'working on %i of %i uvbins' % (cnt+1, len(uvbins))
+    print( 'working on %i of %i uvbins' % (cnt+1, len(uvbins)))
     uvplane = n.zeros((dim,dim))
     for t in times:
         aa.set_jultime(t)
@@ -115,7 +117,7 @@ for cnt, uvbin in enumerate(uvbins):
 
 quadsum = quadsum**.5
 
-print "Saving file as %s_blmin%0.f_blmax%0.f_%.3fGHz_arrayfile.npz" % (name, bl_len_min, bl_len_max, opts.freq) 
+print( "Saving file as %s_blmin%0.f_blmax%0.f_%.3fGHz_arrayfile.npz" % (name, bl_len_min, bl_len_max, opts.freq))
 
 n.savez('%s_blmin%0.f_blmax%0.f_%.3fGHz_arrayfile.npz' % (name, bl_len_min, bl_len_max, opts.freq),
 uv_coverage = uvsum,
